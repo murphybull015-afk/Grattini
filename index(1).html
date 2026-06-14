@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d0d0d">
+<meta name="description" content="Tracker professionale per gratta e vinci">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scratch Master">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Scratch Master</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #171717;
+  --surface2: #1f1f1f;
+  --border: #2a2a2a;
+  --text: #f0f0f0;
+  --muted: #666;
+  --pink: #e74c8b;
+  --pink-dim: rgba(231,76,139,0.12);
+  --green: #2ecc71;
+  --green-dim: rgba(46,204,113,0.10);
+  --amber: #f39c12;
+  --purple: #7c5cbf;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* HEADER */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(13,13,13,0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--pink); }
+.logo-sub { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+.session-date { font-size: 13px; font-weight: 600; color: var(--text); }
+.session-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; text-align: right; }
+
+/* MAIN */
+main { max-width: 960px; margin: 0 auto; padding: 18px 16px 120px; }
+
+/* STATS GRID */
+.stats-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.stat-card.accent { background: var(--purple); border-color: transparent; }
+.stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.stat-card.accent .stat-label { color: rgba(255,255,255,0.55); }
+.stat-num { font-size: 44px; font-weight: 800; line-height: 1; }
+.stat-num.green { color: var(--green); }
+.stat-num.red { color: var(--pink); }
+.stat-num.white { color: #fff; }
+.win-rate { display: flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 11px; color: var(--green); }
+.win-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+/* BOTTOM GRID */
+.bottom-grid { display: grid; grid-template-columns: 1.1fr 0.85fr 1.05fr; gap: 10px; margin-bottom: 12px; }
+
+/* CARDS */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.card-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--pink);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 14px;
+}
+.field-label { font-size: 11px; color: var(--muted); margin-bottom: 7px; }
+
+/* PILLS */
+.cost-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 9px; }
+.pill {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); border-radius: 20px; padding: 4px 10px;
+  font-size: 12px; cursor: pointer; transition: all 0.12s; font-family: inherit;
+}
+.pill:hover { border-color: var(--pink); color: var(--pink); }
+.pill.active { background: var(--pink); border-color: var(--pink); color: #fff; }
+
+/* INPUTS */
+.input-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1.5px solid var(--pink);
+  border-radius: var(--radius-sm); padding: 7px 11px; margin-bottom: 12px;
+}
+.input-prefix { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+.input-wrap input {
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 16px; font-weight: 600;
+  width: 100%; font-family: inherit;
+}
+.outcome-btns { display: flex; gap: 8px; margin-bottom: 12px; }
+.outcome-btn {
+  flex: 1; padding: 9px 6px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: 1.5px solid transparent; transition: all 0.12s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: inherit;
+}
+.btn-perso { background: var(--pink-dim); border-color: var(--pink); color: var(--pink); }
+.btn-perso.active { background: var(--pink); color: #fff; }
+.btn-vinto { background: var(--surface2); border-color: var(--border); color: var(--muted); }
+.btn-vinto.active { background: var(--green); border-color: var(--green); color: #fff; }
+.win-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 11px; margin-bottom: 12px;
+  opacity: 0.35; transition: opacity 0.2s, border-color 0.2s; pointer-events: none;
+}
+.win-wrap.active { opacity: 1; border-color: var(--green); pointer-events: all; }
+.win-wrap input {
+  background: transparent; border: none; outline: none;
+  color: var(--green); font-size: 16px; font-weight: 600;
+  width: 100%; font-family: inherit;
+}
+.add-btn {
+  width: 100%; padding: 11px; background: var(--pink);
+  border: none; border-radius: var(--radius-sm);
+  color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.5px; transition: opacity 0.12s;
+  font-family: inherit;
+}
+.add-btn:hover { opacity: 0.85; }
+.add-btn:active { transform: scale(0.99); opacity: 0.7; }
+
+/* KPI */
+.kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+.kpi-num { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+.kpi-num.amber { color: var(--amber); }
+.kpi-num.green { color: var(--green); }
+.badge {
+  display: inline-block; border-radius: 20px; padding: 3px 10px;
+  font-size: 11px; font-weight: 600; margin-bottom: 6px;
+}
+.badge-amber { background: rgba(243,156,18,0.15); color: var(--amber); }
+.badge-pos { background: var(--green-dim); color: var(--green); }
+.badge-neg { background: var(--pink-dim); color: var(--pink); }
+.mini-stats { margin-top: 10px; display: flex; flex-direction: column; gap: 7px; }
+.mini-row { display: flex; justify-content: space-between; font-size: 11px; }
+.mini-row span:first-child { color: var(--muted); }
+.mini-row span:last-child { font-weight: 600; }
+.action-btns { display: flex; gap: 7px; margin-top: 14px; }
+.action-btn {
+  flex: 1; padding: 7px; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--muted); border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; text-transform: uppercase; letter-spacing: 0.3px; transition: all 0.12s;
+  font-family: inherit;
+}
+.action-btn:hover { background: var(--border); color: var(--text); }
+.action-btn.danger:hover { background: var(--pink-dim); border-color: var(--pink); color: var(--pink); }
+
+/* CHARTS SECTION */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.chart-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
+.chart-wrap { position: relative; height: 160px; }
+
+/* HISTORY */
+.history-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.history-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--muted);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.history-list { max-height: 280px; overflow-y: auto; }
+.history-list::-webkit-scrollbar { width: 3px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.history-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border); transition: background 0.1s;
+}
+.history-item:last-child { border-bottom: none; }
+.history-item:hover { background: var(--surface2); }
+.h-icon {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.h-icon.win { background: var(--green-dim); }
+.h-icon.lose { background: var(--pink-dim); }
+.h-icon svg { width: 14px; height: 14px; }
+.h-info { flex: 1; min-width: 0; }
+.h-text { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.h-date { font-size: 10px; color: var(--muted); margin-top: 2px; }
+.h-amount { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.h-amount.win { color: var(--green); }
+.h-amount.lose { color: var(--pink); }
+.h-del {
+  background: none; border: none; color: var(--border); cursor: pointer;
+  font-size: 18px; line-height: 1; padding: 4px; transition: color 0.12s; flex-shrink: 0;
+}
+.h-del:hover { color: var(--pink); }
+.empty-state { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+/* INSTALL BANNER */
+#install-banner {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 14px 20px 28px; align-items: center; gap: 12px;
+}
+#install-banner.show { display: flex; }
+.install-text { flex: 1; }
+.install-text strong { color: var(--text); font-size: 14px; display: block; margin-bottom: 2px; }
+.install-text span { color: var(--muted); font-size: 11px; }
+.install-btn {
+  background: var(--pink); color: #fff; border: none; border-radius: 8px;
+  padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: inherit;
+}
+.install-dismiss {
+  background: none; border: none; color: var(--muted); font-size: 22px;
+  cursor: pointer; padding: 2px; line-height: 1;
+}
+
+/* TOAST */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500; opacity: 0;
+  transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 200; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* RESPONSIVE */
+@media (max-width: 680px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .stats-grid .stat-card:first-child { grid-column: 1 / -1; }
+  .stat-num { font-size: 38px; }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .kpi-num { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">SCRATCH MASTER</div>
+    <div class="logo-sub">Tracker professionale gratta e vinci</div>
+  </div>
+  <div>
+    <div class="session-label">Sessione</div>
+    <div class="session-date" id="today-date"></div>
+  </div>
+</header>
+
+<main>
+  <!-- Stats top -->
+  <div class="stats-grid">
+    <div class="stat-card accent">
+      <div class="stat-label">Giocati</div>
+      <div class="stat-num white" id="s-giocati">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Vincenti</div>
+      <div class="stat-num green" id="s-vincenti">0</div>
+      <div class="win-rate"><div class="win-dot"></div><span id="s-winrate">Win rate 0%</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Perdenti</div>
+      <div class="stat-num red" id="s-perdenti">0</div>
+    </div>
+  </div>
+
+  <!-- Bottom grid -->
+  <div class="bottom-grid">
+    <!-- Form -->
+    <div class="card">
+      <div class="card-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Registra giocata
+      </div>
+      <div class="field-label">Costo (€)</div>
+      <div class="cost-pills">
+        <button class="pill" onclick="setCost(1,this)">1€</button>
+        <button class="pill" onclick="setCost(2,this)">2€</button>
+        <button class="pill" onclick="setCost(3,this)">3€</button>
+        <button class="pill active" onclick="setCost(5,this)">5€</button>
+        <button class="pill" onclick="setCost(10,this)">10€</button>
+        <button class="pill" onclick="setCost(20,this)">20€</button>
+      </div>
+      <div class="input-wrap">
+        <span class="input-prefix">€</span>
+        <input type="number" id="cost-val" value="5" min="0.5" step="0.5" inputmode="decimal" onchange="syncPills()">
+      </div>
+      <div class="field-label">Esito</div>
+      <div class="outcome-btns">
+        <button class="outcome-btn btn-perso active" id="btn-perso" onclick="setOutcome('perso')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          Perso
+        </button>
+        <button class="outcome-btn btn-vinto" id="btn-vinto" onclick="setOutcome('vinto')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          Vinto
+        </button>
+      </div>
+      <div class="win-wrap" id="win-wrap">
+        <span class="input-prefix" style="color:var(--green)">€</span>
+        <input type="number" id="win-val" value="" min="0" step="0.5" inputmode="decimal" placeholder="Premio vinto">
+      </div>
+      <button class="add-btn" onclick="addPlay()">+ Aggiungi biglietto</button>
+    </div>
+
+    <!-- Totale speso -->
+    <div class="card">
+      <div class="kpi-label">Totale speso</div>
+      <div class="kpi-num amber" id="totale-speso">€ 0,00</div>
+      <div class="kpi-label">RTI</div>
+      <div class="badge badge-amber" id="rti-badge">RTI: 0%</div><br>
+      <div class="badge badge-neg" id="bilancio-badge">Bilancio: € 0,00</div>
+      <div class="mini-stats">
+        <div class="mini-row"><span>Biglietto medio</span><span id="avg-ticket">€ 0,00</span></div>
+        <div class="mini-row"><span>Premio massimo</span><span id="max-win">€ 0,00</span></div>
+        <div class="mini-row"><span>Sessioni</span><span id="total-sessions">0</span></div>
+      </div>
+    </div>
+
+    <!-- Totale vinto -->
+    <div class="card" style="border-color:rgba(46,204,113,0.2)">
+      <div class="kpi-label">Totale vinto</div>
+      <div class="kpi-num green" id="totale-vinto">€ 0,00</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">
+        Dati salvati automaticamente sul dispositivo.
+      </div>
+      <div class="action-btns">
+        <button class="action-btn" onclick="undoLast()">Annulla</button>
+        <button class="action-btn danger" onclick="confirmReset()">Resetta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Andamento bilancio</div>
+      <div class="chart-wrap"><canvas id="chart-balance"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Distribuzione spesa per importo</div>
+      <div class="chart-wrap"><canvas id="chart-dist"></canvas></div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="history-card">
+    <div class="history-header">
+      <span>Storico giocate</span>
+      <span id="history-count" style="font-weight:400">0 voci</span>
+    </div>
+    <div class="history-list" id="history-list">
+      <div class="empty-state">Nessuna giocata registrata.<br>Inizia aggiungendo il tuo primo biglietto.</div>
+    </div>
+  </div>
+</main>
+
+<!-- Install banner -->
+<div id="install-banner">
+  <div class="install-text">
+    <strong>Installa Scratch Master</strong>
+    <span>Disponibile offline sulla schermata home</span>
+  </div>
+  <button class="install-btn" onclick="installApp()">Installa</button>
+  <button class="install-dismiss" onclick="dismissInstall()">&times;</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'scratchmaster_plays_v1';
+let plays = [];
+let currentOutcome = 'perso';
+let deferredPrompt = null;
+let chartBalance = null;
+let chartDist = null;
+
+function init() {
+  setDate();
+  loadPlays();
+  render();
+  registerSW();
+}
+
+function setDate() {
+  const days = ['DOM','LUN','MAR','MER','GIO','VEN','SAB'];
+  const months = ['GEN','FEB','MAR','APR','MAG','GIU','LUG','AGO','SET','OTT','NOV','DIC'];
+  const d = new Date();
+  document.getElementById('today-date').textContent =
+    days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function loadPlays() {
+  try { plays = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e) { plays = []; }
+}
+
+function savePlays() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(plays)); }
+  catch(e) { toast('Errore nel salvataggio'); }
+}
+
+function setCost(v, btn) {
+  document.getElementById('cost-val').value = v;
+  document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function syncPills() {
+  const v = parseFloat(document.getElementById('cost-val').value);
+  document.querySelectorAll('.pill').forEach(b => {
+    b.classList.toggle('active', parseFloat(b.textContent) === v);
+  });
+}
+
+function setOutcome(o) {
+  currentOutcome = o;
+  document.getElementById('btn-perso').className = 'outcome-btn btn-perso' + (o === 'perso' ? ' active' : '');
+  document.getElementById('btn-vinto').className = 'outcome-btn btn-vinto' + (o === 'vinto' ? ' active' : '');
+  const ww = document.getElementById('win-wrap');
+  ww.classList.toggle('active', o === 'vinto');
+  if (o === 'vinto') document.getElementById('win-val').focus();
+}
+
+function addPlay() {
+  const cost = parseFloat(document.getElementById('cost-val').value) || 0;
+  if (cost <= 0) { toast('Inserisci un importo valido'); return; }
+  const win = currentOutcome === 'vinto' ? (parseFloat(document.getElementById('win-val').value) || 0) : 0;
+  plays.push({ cost, win, outcome: currentOutcome, ts: Date.now() });
+  savePlays();
+  document.getElementById('win-val').value = '';
+  render();
+  toast(currentOutcome === 'vinto' ? 'Vincita registrata' : 'Biglietto aggiunto');
+}
+
+function undoLast() {
+  if (!plays.length) { toast('Nessuna giocata da annullare'); return; }
+  plays.pop(); savePlays(); render(); toast('Ultima giocata rimossa');
+}
+
+function deletePlay(idx) {
+  plays.splice(idx, 1); savePlays(); render(); toast('Giocata eliminata');
+}
+
+function confirmReset() {
+  if (!plays.length) { toast('Nessun dato da resettare'); return; }
+  if (confirm('Eliminare tutti i dati? L\'operazione non è reversibile.')) {
+    plays = []; savePlays(); render(); toast('Dati resettati');
+  }
+}
+
+function fmt(n) {
+  return '€ ' + n.toFixed(2).replace('.', ',');
+}
+
+function render() {
+  const n = plays.length;
+  const vincenti = plays.filter(p => p.outcome === 'vinto').length;
+  const perdenti = n - vincenti;
+  const speso = plays.reduce((a, p) => a + p.cost, 0);
+  const vinto = plays.reduce((a, p) => a + p.win, 0);
+  const bilancio = vinto - speso;
+  const rti = speso > 0 ? Math.round((vinto / speso) * 100) : 0;
+  const avg = n > 0 ? speso / n : 0;
+  const maxW = n > 0 ? Math.max(...plays.map(p => p.win)) : 0;
+  const wr = n > 0 ? Math.round((vincenti / n) * 100) : 0;
+  const sessions = new Set(plays.map(p => new Date(p.ts).toDateString())).size;
+
+  document.getElementById('s-giocati').textContent = n;
+  document.getElementById('s-vincenti').textContent = vincenti;
+  document.getElementById('s-perdenti').textContent = perdenti;
+  document.getElementById('s-winrate').textContent = 'Win rate ' + wr + '%';
+  document.getElementById('totale-speso').textContent = fmt(speso);
+  document.getElementById('totale-vinto').textContent = fmt(vinto);
+  document.getElementById('rti-badge').textContent = 'RTI: ' + rti + '%';
+  document.getElementById('avg-ticket').textContent = fmt(avg);
+  document.getElementById('max-win').textContent = fmt(maxW);
+  document.getElementById('total-sessions').textContent = sessions;
+
+  const bb = document.getElementById('bilancio-badge');
+  bb.textContent = 'Bilancio: ' + fmt(bilancio);
+  bb.className = 'badge ' + (bilancio >= 0 ? 'badge-pos' : 'badge-neg');
+
+  renderHistory();
+  renderCharts();
+}
+
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  const n = plays.length;
+  document.getElementById('history-count').textContent = n + (n === 1 ? ' voce' : ' voci');
+  if (!n) {
+    el.innerHTML = '<div class="empty-state">Nessuna giocata registrata.<br>Inizia aggiungendo il tuo primo biglietto.</div>';
+    return;
+  }
+  el.innerHTML = [...plays].reverse().map((p, ri) => {
+    const idx = plays.length - 1 - ri;
+    const isWin = p.outcome === 'vinto';
+    const d = new Date(p.ts);
+    const ds = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear() +
+               ' · ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+    const winSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2ecc71" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>`;
+    const loseSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c8b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`;
+    return `<div class="history-item">
+      <div class="h-icon ${isWin?'win':'lose'}">${isWin?winSvg:loseSvg}</div>
+      <div class="h-info">
+        <div class="h-text">${isWin ? 'Vincita · premio ' + fmt(p.win) : 'Perso · biglietto ' + fmt(p.cost)}</div>
+        <div class="h-date">${ds}</div>
+      </div>
+      <div class="h-amount ${isWin?'win':'lose'}">${isWin ? '+' + fmt(p.win) : '-' + fmt(p.cost)}</div>
+      <button class="h-del" onclick="deletePlay(${idx})" title="Elimina">&times;</button>
+    </div>`;
+  }).join('');
+}
+
+function renderCharts() {
+  const chartDefaults = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+  };
+
+  // --- Andamento bilancio ---
+  let running = 0;
+  const balanceData = plays.map(p => {
+    running += (p.win - p.cost);
+    return parseFloat(running.toFixed(2));
+  });
+  const labels = plays.map((_, i) => '#' + (i + 1));
+
+  if (chartBalance) chartBalance.destroy();
+  const ctx1 = document.getElementById('chart-balance').getContext('2d');
+  const grad = ctx1.createLinearGradient(0, 0, 0, 160);
+  grad.addColorStop(0, 'rgba(231,76,139,0.25)');
+  grad.addColorStop(1, 'rgba(231,76,139,0)');
+
+  chartBalance = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: labels.length ? labels : [''],
+      datasets: [{
+        data: balanceData.length ? balanceData : [0],
+        borderColor: '#e74c8b',
+        borderWidth: 2,
+        backgroundColor: grad,
+        fill: true,
+        tension: 0.35,
+        pointRadius: balanceData.length < 20 ? 3 : 0,
+        pointBackgroundColor: '#e74c8b',
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      scales: {
+        x: { display: false },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#666', font: { size: 10 }, callback: v => '€' + v.toFixed(0) }
+        }
+      }
+    }
+  });
+
+  // --- Distribuzione per importo ---
+  const costMap = {};
+  plays.forEach(p => {
+    const k = p.cost + '€';
+    costMap[k] = (costMap[k] || 0) + 1;
+  });
+  const dLabels = Object.keys(costMap);
+  const dData = Object.values(costMap);
+  const colors = ['#e74c8b','#7c5cbf','#f39c12','#2ecc71','#3498db','#e67e22'];
+
+  if (chartDist) chartDist.destroy();
+  const ctx2 = document.getElementById('chart-dist').getContext('2d');
+  chartDist = new Chart(ctx2, {
+    type: dLabels.length ? 'doughnut' : 'doughnut',
+    data: {
+      labels: dLabels.length ? dLabels : ['Nessun dato'],
+      datasets: [{
+        data: dData.length ? dData : [1],
+        backgroundColor: dLabels.length ? colors.slice(0, dLabels.length) : ['#2a2a2a'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          display: true,
+          position: 'right',
+          labels: { color: '#888', font: { size: 11 }, boxWidth: 10, padding: 8 }
+        }
+      }
+    }
+  });
+}
+
+// TOAST
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// PWA
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('install_dismissed')) {
+    document.getElementById('install-banner').classList.add('show');
+  }
+});
+
+function installApp() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => {
+    deferredPrompt = null;
+    document.getElementById('install-banner').classList.remove('show');
+  });
+}
+
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('install_dismissed', '1');
+}
+
+init();
+</script>
+</body>
+</html>
